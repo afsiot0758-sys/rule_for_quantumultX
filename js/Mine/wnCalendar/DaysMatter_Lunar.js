@@ -10,14 +10,25 @@
  * 女儿生日：腊月廿五
  * 结婚纪念日：九月十四
  *
- * 你的原版地址：
+ * 功能：
+ * 1. 保留原版 DaysMatter 功能
+ * 2. 增加农历生日/纪念日
+ * 3. 每天运行时自动计算
+ * 4. Loon 自动发送通知
+ * 5. 通知只显示最近 3 个倒数日
+ *
+ * 原版地址：
  * https://raw.githubusercontent.com/afsiot0758-sys/rule_for_quantumultX/master/js/Mine/wnCalendar/DaysMatter.js
  */
 
 const DAYS_MATTER_SOURCE =
   'https://raw.githubusercontent.com/afsiot0758-sys/rule_for_quantumultX/master/js/Mine/wnCalendar/DaysMatter.js'
 
+
+// ============================================================
 // 1900-2100 年农历数据
+// ============================================================
+
 const LUNAR_INFO = [
   0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
   0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
@@ -42,37 +53,76 @@ const LUNAR_INFO = [
   0x0d520
 ]
 
+
 function leapMonth(year) {
   return LUNAR_INFO[year - 1900] & 0x0f
 }
 
+
 function leapDays(year) {
   const lm = leapMonth(year)
-  if (!lm) return 0
-  return (LUNAR_INFO[year - 1900] & 0x10000) ? 30 : 29
+
+  if (!lm) {
+    return 0
+  }
+
+  return (LUNAR_INFO[year - 1900] & 0x10000)
+    ? 30
+    : 29
 }
 
+
 function lunarYearDays(year) {
+
   let sum = 348
   const info = LUNAR_INFO[year - 1900]
 
-  for (let bit = 0x8000; bit > 0x8; bit >>= 1) {
-    if (info & bit) sum++
+  for (
+    let bit = 0x8000;
+    bit > 0x8;
+    bit >>= 1
+  ) {
+    if (info & bit) {
+      sum++
+    }
   }
 
   return sum + leapDays(year)
 }
 
+
 function lunarMonthDays(year, month) {
-  return (LUNAR_INFO[year - 1900] & (0x10000 >> month)) ? 30 : 29
+
+  return (
+    LUNAR_INFO[year - 1900] &
+    (0x10000 >> month)
+  )
+    ? 30
+    : 29
 }
 
-// 普通农历月 → 公历
-// 本脚本固定不使用闰月
+
+// ============================================================
+// 普通农历 → 公历
+// 不使用闰月
+// ============================================================
+
 function lunarToSolar(year, month, day) {
-  if (year < 1900 || year > 2100) return null
-  if (month < 1 || month > 12) return null
-  if (day < 1 || day > lunarMonthDays(year, month)) return null
+
+  if (year < 1900 || year > 2100) {
+    return null
+  }
+
+  if (month < 1 || month > 12) {
+    return null
+  }
+
+  if (
+    day < 1 ||
+    day > lunarMonthDays(year, month)
+  ) {
+    return null
+  }
 
   let offset = 0
 
@@ -81,8 +131,10 @@ function lunarToSolar(year, month, day) {
   }
 
   for (let m = 1; m < month; m++) {
+
     offset += lunarMonthDays(year, m)
 
+    // 普通月经过闰月时，加上闰月天数
     if (leapMonth(year) === m) {
       offset += leapDays(year)
     }
@@ -91,8 +143,12 @@ function lunarToSolar(year, month, day) {
   offset += day - 1
 
   const date = new Date(1900, 0, 31)
+
   date.setHours(0, 0, 0, 0)
-  date.setDate(date.getDate() + offset)
+
+  date.setDate(
+    date.getDate() + offset
+  )
 
   return (
     date.getFullYear() +
@@ -103,153 +159,317 @@ function lunarToSolar(year, month, day) {
   )
 }
 
+
+// ============================================================
+// HTTP 请求
+// ============================================================
+
 function getHttp(url, callback) {
-  if (typeof $httpClient !== 'undefined' && $httpClient.get) {
-    $httpClient.get(url, callback)
-    return
-  }
 
-  if (typeof $task !== 'undefined' && $task.fetch) {
-    $task.fetch({ url: url }).then(
-      function (resp) {
-        callback(null, resp, resp.body)
-      },
-      function (err) {
-        callback(err, null, null)
-      }
+  // Loon / Surge / Stash / Shadowrocket
+  if (
+    typeof $httpClient !== 'undefined' &&
+    $httpClient.get
+  ) {
+
+    $httpClient.get(
+      url,
+      callback
     )
+
     return
   }
 
-  callback(new Error('当前环境不支持 HTTP 请求'), null, null)
+
+  // Quantumult X
+  if (
+    typeof $task !== 'undefined' &&
+    $task.fetch
+  ) {
+
+    $task.fetch({
+      url: url
+    }).then(
+
+      function (resp) {
+
+        callback(
+          null,
+          resp,
+          resp.body
+        )
+
+      },
+
+      function (err) {
+
+        callback(
+          err,
+          null,
+          null
+        )
+
+      }
+
+    )
+
+    return
+  }
+
+
+  callback(
+    new Error('当前环境不支持 HTTP 请求'),
+    null,
+    null
+  )
 }
 
+
+// ============================================================
+// 给原版 DaysMatter 增加农历日期
+// ============================================================
+
 function addLunarDates(source) {
-  // 原版 DaysMatter.js 中：
-  // let dateDiffArray = []
-  // startWork()
 
-  const marker = 'let dateDiffArray = []'
+  const marker =
+    'let dateDiffArray = []'
 
-  if (source.indexOf(marker) === -1) {
+
+  if (
+    source.indexOf(marker) === -1
+  ) {
+
     throw new Error(
       '未找到 DaysMatter.js 的 dateDiffArray 初始化位置'
     )
+
   }
 
+
   const lunarCode = `
+
 /* ===== DaysMatter Lunar Extension ===== */
 
 ;(function () {
 
   const lunarItems = [
+
     {
       month: 1,
       day: 24,
       name: '我的生日（农历正月廿四）'
     },
+
     {
       month: 5,
       day: 4,
       name: '老婆生日（农历五月初四）'
     },
+
     {
       month: 12,
       day: 25,
       name: '女儿生日（农历腊月廿五）'
     },
+
     {
       month: 9,
       day: 14,
       name: '结婚纪念日（农历九月十四）'
     }
+
   ]
 
+
   /*
-   * 前一年、今年、下一年都计算。
-   * 这样农历腊月日期落到公历下一年时也不会漏掉。
+   * 前一年 + 今年 + 下一年
+   *
+   * 防止农历腊月日期转换到
+   * 下一公历年后被遗漏。
    */
 
-  ;[tnowY - 1, tnowY, tnowY + 1].forEach(
+  ;[
+    tnowY - 1,
+    tnowY,
+    tnowY + 1
+  ].forEach(
+
     function (lunarYear) {
 
       lunarItems.forEach(
+
         function (item) {
 
-          const solar = lunarToSolar(
-            lunarYear,
-            item.month,
-            item.day
-          )
+          const solar =
+            lunarToSolar(
+              lunarYear,
+              item.month,
+              item.day
+            )
 
           if (solar) {
+
             daysData.push({
+
               date: solar,
+
               name: item.name
+
             })
+
           }
 
         }
+
       )
 
     }
+
   )
 
 })()
 
 /* ===== End Lunar Extension ===== */
+
 `
 
-  return source.replace(
-    marker,
-    marker + '\n' + lunarCode
-  )
+
+  let modifiedSource =
+    source.replace(
+      marker,
+      marker +
+      '\n' +
+      lunarCode
+    )
+
+
+  // ==========================================================
+  // Loon 通知
+  // ==========================================================
+
+  /*
+   * 原版已经生成：
+   *
+   * notifyContent
+   *
+   * 里面就是最近 3 个倒数日。
+   *
+   * 原版有一行：
+   *
+   * // $.msg(title, '', notifyContent)
+   *
+   * 我们只把这一行变成真正的通知。
+   */
+
+  const notifyMarker =
+    "// $.msg(title, '', notifyContent)"
+
+
+  if (
+    modifiedSource.indexOf(notifyMarker) === -1
+  ) {
+
+    throw new Error(
+      '未找到 DaysMatter.js 的通知位置'
+    )
+
+  }
+
+
+  const notifyCode =
+    "$.msg(title, '最近 3 个', notifyContent)"
+
+
+  modifiedSource =
+    modifiedSource.replace(
+      notifyMarker,
+      notifyCode +
+      '\n' +
+      notifyMarker
+    )
+
+
+  return modifiedSource
 }
 
-getHttp(
-  DAYS_MATTER_SOURCE,
-  function (error, response, body) {
 
-    if (error || !body) {
+// ============================================================
+// 读取自己仓库中的原版 DaysMatter.js
+// ============================================================
+
+getHttp(
+
+  DAYS_MATTER_SOURCE,
+
+  function (
+    error,
+    response,
+    body
+  ) {
+
+    if (
+      error ||
+      !body
+    ) {
 
       if (
         typeof $notification !== 'undefined' &&
         $notification.post
       ) {
+
         $notification.post(
-          'DaysMatter',
+          '📅 倒数日',
           '脚本加载失败',
           '无法读取你自己的 DaysMatter.js'
         )
+
       }
 
-      if (typeof $done !== 'undefined') {
+      if (
+        typeof $done !== 'undefined'
+      ) {
+
         $done()
+
       }
 
       return
     }
 
+
     try {
 
-      eval(addLunarDates(body))
+      eval(
+        addLunarDates(body)
+      )
 
-    } catch (e) {
+    }
+
+    catch (e) {
 
       if (
         typeof $notification !== 'undefined' &&
         $notification.post
       ) {
+
         $notification.post(
-          'DaysMatter',
+          '📅 倒数日',
           '脚本执行失败',
           String(e)
         )
+
       }
 
-      if (typeof $done !== 'undefined') {
+      if (
+        typeof $done !== 'undefined'
+      ) {
+
         $done()
+
       }
+
     }
+
   }
+
 )
