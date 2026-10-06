@@ -673,12 +673,14 @@ async function main() {
         // Loon / Quantumult X 通知
         // --------------------------------------------
 
-        var notifyCode =
-
-            "if (" +
-            "typeof $notification !== "undefined" " +
-            "&& $notification.post" +
-            ") {\n" +
+var notifyCode =
+    "if (typeof $notification !== 'undefined' && $notification.post) {\n" +
+    "    $notification.post(title, '最近 3 个', notifyContent);\n" +
+    "} else if (typeof $notify !== 'undefined') {\n" +
+    "    $notify(title, '最近 3 个', notifyContent);\n" +
+    "} else {\n" +
+    "    $.msg(title, '最近 3 个', notifyContent);\n" +
+    "}\n";
 
             "    $notification.post(" +
             "title, " +
