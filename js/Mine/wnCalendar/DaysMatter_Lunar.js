@@ -682,22 +682,6 @@ var notifyCode =
     "    $.msg(title, '最近 3 个', notifyContent);\n" +
     "}\n";
 
-            "    $notification.post(" +
-            "title, " +
-            "'最近 3 个', " +
-            "notifyContent" +
-            ");\n" +
-
-            "} else if (" +
-            "typeof $notify !== "undefined" +
-            ") {\n" +
-
-            "    $notify(" +
-            "title, " +
-            "'最近 3 个', " +
-            "notifyContent" +
-            ");\n" +
-
             "} else {\n" +
 
             "    $.msg(" +
