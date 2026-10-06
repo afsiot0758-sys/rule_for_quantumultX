@@ -22,7 +22,7 @@
 
 
 // ============================================================
-// 1. 原版 DaysMatter.js
+// 原版 DaysMatter.js
 // ============================================================
 
 const DAYS_MATTER_SOURCE =
@@ -30,8 +30,8 @@ const DAYS_MATTER_SOURCE =
 
 
 // ============================================================
-// 2. 农历数据表
-//    1900～2100
+// 农历数据表
+// 1900～2100
 // ============================================================
 
 const LUNAR_INFO = [
@@ -57,7 +57,7 @@ const LUNAR_INFO = [
     0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
 
     0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4,
-    0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6,
+    0x0d250, 0x0d558, 0x0b540, 0x0b5a0, 0x195a6,
 
     0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a,
     0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570,
@@ -74,7 +74,7 @@ const LUNAR_INFO = [
     0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60,
     0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
 
-    0x05aa0, 0x076a3, 0x096d0, 0x04bd7, 0x04ad0,
+    0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0,
     0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
 
     0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577,
@@ -100,7 +100,7 @@ const LUNAR_INFO = [
 
 
 // ============================================================
-// 3. 农历基础函数
+// 农历基础函数
 // ============================================================
 
 function lunarLeapMonth(year) {
@@ -112,7 +112,8 @@ function lunarLeapMonth(year) {
 
 function lunarLeapDays(year) {
 
-    const leapMonth = lunarLeapMonth(year);
+    var leapMonth =
+        lunarLeapMonth(year);
 
     if (!leapMonth) {
 
@@ -120,34 +121,38 @@ function lunarLeapDays(year) {
 
     }
 
-    return (LUNAR_INFO[year - 1900] & 0x10000)
-        ? 30
-        : 29;
+    return (
+        LUNAR_INFO[year - 1900] &
+        0x10000
+    ) ? 30 : 29;
 
 }
 
 
 function lunarMonthDays(year, month) {
 
-    return (LUNAR_INFO[year - 1900] &
-        (0x10000 >> month))
-        ? 30
-        : 29;
+    return (
+        LUNAR_INFO[year - 1900] &
+        (0x10000 >> month)
+    ) ? 30 : 29;
 
 }
 
 
 function lunarYearDays(year) {
 
-    let total = 348;
+    var total = 348;
 
     for (
-        let bit = 0x8000;
+        var bit = 0x8000;
         bit > 0x8;
         bit >>= 1
     ) {
 
-        if (LUNAR_INFO[year - 1900] & bit) {
+        if (
+            LUNAR_INFO[year - 1900] &
+            bit
+        ) {
 
             total++;
 
@@ -155,19 +160,32 @@ function lunarYearDays(year) {
 
     }
 
-    return total + lunarLeapDays(year);
+    return (
+        total +
+        lunarLeapDays(year)
+    );
 
 }
 
 
 // ============================================================
-// 4. 农历 → 公历
-//    不考虑闰月生日
+// 农历日期 → 公历日期
+//
+// 基准：1900年1月31日 = 农历1900年正月初一
+//
+// 本功能不处理“闰月生日”
 // ============================================================
 
-function lunarToSolar(year, month, day) {
+function lunarToSolar(
+    year,
+    month,
+    day
+) {
 
-    if (year < 1900 || year > 2100) {
+    if (
+        year < 1900 ||
+        year > 2100
+    ) {
 
         throw new Error(
             "农历年份超出1900～2100范围"
@@ -176,35 +194,45 @@ function lunarToSolar(year, month, day) {
     }
 
 
-    let offset = 0;
+    var offset = 0;
 
 
-    // 1900年开始累计
+    // 累加1900年至目标年前一年的天数
     for (
-        let y = 1900;
+        var y = 1900;
         y < year;
         y++
     ) {
 
-        offset += lunarYearDays(y);
+        offset +=
+            lunarYearDays(y);
 
     }
 
 
-    // 累加月份
-    const leapMonth = lunarLeapMonth(year);
+    // 累加目标年之前的月份
+    var leapMonth =
+        lunarLeapMonth(year);
 
     for (
-        let m = 1;
+        var m = 1;
         m < month;
         m++
     ) {
 
-        offset += lunarMonthDays(year, m);
+        offset +=
+            lunarMonthDays(
+                year,
+                m
+            );
 
-        if (m === leapMonth) {
 
-            offset += lunarLeapDays(year);
+        if (
+            m === leapMonth
+        ) {
+
+            offset +=
+                lunarLeapDays(year);
 
         }
 
@@ -212,12 +240,16 @@ function lunarToSolar(year, month, day) {
 
 
     // 加上日期
-    offset += day - 1;
+    offset +=
+        day - 1;
 
 
-    // 1900-01-31 = 农历1900年正月初一
-    const baseDate =
-        new Date(1900, 0, 31);
+    var baseDate =
+        new Date(
+            1900,
+            0,
+            31
+        );
 
 
     return new Date(
@@ -229,12 +261,14 @@ function lunarToSolar(year, month, day) {
 
 
 // ============================================================
-// 5. 日期格式化
+// 日期格式化
 // ============================================================
 
-function pad(number) {
+function pad2(number) {
 
-    return String(number).padStart(2, "0");
+    return String(
+        number
+    ).padStart(2, "0");
 
 }
 
@@ -244,304 +278,388 @@ function formatDate(date) {
     return (
         date.getFullYear() +
         "-" +
-        pad(date.getMonth() + 1) +
+        pad2(
+            date.getMonth() + 1
+        ) +
         "-" +
-        pad(date.getDate())
+        pad2(
+            date.getDate()
+        )
     );
 
 }
 
 
 // ============================================================
-// 6. 农历项目
+// 创建农历项目
 // ============================================================
 
 function createLunarItems(year) {
 
-    return [
+    var definitions = [
 
-        {
-            month: 1,
-            day: 24,
-            name: "我的生日（农历正月廿四）"
-        },
+        [
+            1,
+            24,
+            "我的生日（农历正月廿四）"
+        ],
 
-        {
-            month: 5,
-            day: 4,
-            name: "老婆生日（农历五月初四）"
-        },
+        [
+            5,
+            4,
+            "老婆生日（农历五月初四）"
+        ],
 
-        {
-            month: 12,
-            day: 25,
-            name: "女儿生日（农历腊月廿五）"
-        },
+        [
+            12,
+            25,
+            "女儿生日（农历腊月廿五）"
+        ],
 
-        {
-            month: 9,
-            day: 14,
-            name: "结婚纪念日（农历九月十四）"
-        }
+        [
+            9,
+            14,
+            "结婚纪念日（农历九月十四）"
+        ]
 
-    ].map(function(item) {
+    ];
 
-        return {
+
+    var result = [];
+
+
+    for (
+        var i = 0;
+        i < definitions.length;
+        i++
+    ) {
+
+        var item =
+            definitions[i];
+
+
+        result.push({
 
             date: formatDate(
                 lunarToSolar(
                     year,
-                    item.month,
-                    item.day
+                    item[0],
+                    item[1]
                 )
             ),
 
-            name: item.name
+            name: item[2]
 
-        };
+        });
 
-    });
-
-}
+    }
 
 
-// ============================================================
-// 7. 入职周年
-//
-// 2014年11月3日入职
-//
-// 2026年11月3日 = 12周年
-// 2027年11月3日 = 13周年
-// ============================================================
-
-function createEmploymentItems(year) {
-
-    const employmentYear = 2014;
-
-    const years = year - employmentYear;
-
-    return [
-
-        {
-
-            date: year + "-11-03",
-
-            name:
-                "入职" +
-                years +
-                "周年（2014年11月3日）"
-
-        }
-
-    ];
+    return result;
 
 }
 
 
 // ============================================================
-// 8. HTTP 获取原版 DaysMatter.js
+// 创建入职周年
+//
+// 入职日期：2014年11月3日
+// ============================================================
+
+function createEmploymentItem(
+    year
+) {
+
+    var years =
+        year - 2014;
+
+
+    return {
+
+        date:
+            year +
+            "-11-03",
+
+        name:
+            "入职" +
+            years +
+            "周年（2014年11月3日）"
+
+    };
+
+}
+
+
+// ============================================================
+// 获取原版 DaysMatter.js
 // ============================================================
 
 function fetchText(url) {
 
-    return new Promise(function(resolve, reject) {
-
-        // Quantumult X
-        if (
-            typeof $task !== "undefined" &&
-            $task.fetch
+    return new Promise(
+        function (
+            resolve,
+            reject
         ) {
 
-            $task.fetch({
 
-                url: url
+            // --------------------------------------------
+            // Quantumult X
+            // --------------------------------------------
 
-            }).then(function(response) {
+            if (
+                typeof $task !==
+                    "undefined" &&
+                $task.fetch
+            ) {
 
-                resolve(response.body);
+                $task.fetch({
 
-            }).catch(function(error) {
-
-                reject(error);
-
-            });
-
-            return;
-
-        }
-
-
-        // Loon / Surge / Stash 等
-        if (
-            typeof $httpClient !== "undefined" &&
-            $httpClient.get
-        ) {
-
-            $httpClient.get(
-
-                {
                     url: url
-                },
 
-                function(error, response, body) {
+                }).then(
+                    function (response) {
 
-                    if (error) {
+                        resolve(
+                            response.body
+                        );
+
+                    }
+                ).catch(
+                    function (error) {
 
                         reject(error);
 
-                        return;
+                    }
+                );
+
+
+                return;
+
+            }
+
+
+            // --------------------------------------------
+            // Loon / Surge / Stash
+            // --------------------------------------------
+
+            if (
+                typeof $httpClient !==
+                    "undefined" &&
+                $httpClient.get
+            ) {
+
+                $httpClient.get(
+
+                    {
+                        url: url
+                    },
+
+                    function (
+                        error,
+                        response,
+                        body
+                    ) {
+
+                        if (error) {
+
+                            reject(error);
+
+                            return;
+
+                        }
+
+
+                        resolve(body);
 
                     }
 
-                    resolve(body);
+                );
 
-                }
 
+                return;
+
+            }
+
+
+            reject(
+                new Error(
+                    "当前环境不支持HTTP请求"
+                )
             );
 
-            return;
-
         }
-
-
-        reject(
-            new Error(
-                "当前环境不支持HTTP请求"
-            )
-        );
-
-    });
+    );
 
 }
 
 
 // ============================================================
-// 9. 主程序
+// 主程序
 // ============================================================
 
 async function main() {
 
     try {
 
+
+        // --------------------------------------------
         // 获取原版 DaysMatter.js
-        let source =
+        // --------------------------------------------
+
+        var source =
             await fetchText(
                 DAYS_MATTER_SOURCE
             );
 
 
-        // ====================================================
-        // 找到原版日期数组
-        // ====================================================
+        // --------------------------------------------
+        // 找到原版 daysData
+        // --------------------------------------------
 
-        const dateMarker =
-            "let dateDiffArray = []";
+        var daysMarker =
+            "let daysData = []";
 
 
         if (
-            source.indexOf(dateMarker) === -1
+            source.indexOf(
+                daysMarker
+            ) === -1
         ) {
 
             throw new Error(
-                "未找到 DaysMatter.js 的日期数组位置"
+                "未找到 DaysMatter.js 的 daysData 定义位置"
             );
 
         }
 
 
-        // ====================================================
+        // --------------------------------------------
         // 当前年份
-        // ====================================================
+        // --------------------------------------------
 
-        const currentYear =
-            new Date().getFullYear();
+        var currentDate =
+            new Date();
+
+        var currentYear =
+            currentDate.getFullYear();
 
 
-        // ====================================================
-        // 添加：
-        //
-        // 当前年农历生日
-        // 下一年农历生日
-        //
+        // --------------------------------------------
+        // 创建自定义日期
+        // --------------------------------------------
+
+        var extraItems = [];
+
+
+        // 当前年农历
+        var lunarCurrent =
+            createLunarItems(
+                currentYear
+            );
+
+
+        // 下一年农历
+        var lunarNext =
+            createLunarItems(
+                currentYear + 1
+            );
+
+
+        // 加入当前年农历
+        for (
+            var i = 0;
+            i < lunarCurrent.length;
+            i++
+        ) {
+
+            extraItems[
+                extraItems.length
+            ] = lunarCurrent[i];
+
+        }
+
+
+        // 加入下一年农历
+        for (
+            var j = 0;
+            j < lunarNext.length;
+            j++
+        ) {
+
+            extraItems[
+                extraItems.length
+            ] = lunarNext[j];
+
+        }
+
+
         // 当前年入职周年
+        extraItems[
+            extraItems.length
+        ] =
+            createEmploymentItem(
+                currentYear
+            );
+
+
         // 下一年入职周年
-        // ====================================================
-
-        const extraItems = [];
-
-
-        // 当前年
-        extraItems.push(
-            ...createLunarItems(
-                currentYear
-            )
-        );
-
-        extraItems.push(
-            ...createEmploymentItems(
-                currentYear
-            )
-        );
-
-
-        // 下一年
-        extraItems.push(
-            ...createLunarItems(
+        extraItems[
+            extraItems.length
+        ] =
+            createEmploymentItem(
                 currentYear + 1
-            )
-        );
-
-        extraItems.push(
-            ...createEmploymentItems(
-                currentYear + 1
-            )
-        );
+            );
 
 
-        // ====================================================
-        // 注入日期
-        // ====================================================
+        // --------------------------------------------
+        // 注入原版 daysData
+        // --------------------------------------------
 
-        const injection = `
-
-/* ========================================================
- * DaysMatter Lunar + Employment
- * ======================================================== */
-
-(function () {
-
-    const extraItems =
-        ${JSON.stringify(extraItems)};
-
-    extraItems.forEach(function (item) {
-
-        daysData.push(item);
-
-    });
-
-})();
-
-`;
+        var injection =
+            daysMarker +
+            "\n" +
+            "(function () {\n" +
+            "    var _customDaysData = " +
+            JSON.stringify(
+                extraItems
+            ) +
+            ";\n" +
+            "\n" +
+            "    for (" +
+            "var _i = 0; " +
+            "_i < _customDaysData.length; " +
+            "_i++) {\n" +
+            "\n" +
+            "        daysData[" +
+            "daysData.length" +
+            "] = " +
+            "_customDaysData[_i];\n" +
+            "\n" +
+            "    }\n" +
+            "\n" +
+            "})();\n";
 
 
         source =
             source.replace(
-                dateMarker,
-                dateMarker +
+                daysMarker,
                 injection
             );
 
 
-        // ====================================================
-        // 找到原版通知位置
-        // ====================================================
+        // ========================================================
+        // 通知
+        // ========================================================
 
-        const notifyMarker =
+        var notifyMarker =
             "// $.msg(title, '', notifyContent)";
 
 
         if (
-            source.indexOf(notifyMarker) === -1
+            source.indexOf(
+                notifyMarker
+            ) === -1
         ) {
 
             throw new Error(
@@ -551,84 +669,76 @@ async function main() {
         }
 
 
-        // ====================================================
-        // 跨平台通知
-        //
-        // Loon：
-        // $notification.post()
-        //
-        // Quantumult X：
-        // $notify()
-        //
-        // 其他：
-        // $.msg()
-        // ====================================================
+        // --------------------------------------------
+        // Loon / Quantumult X 通知
+        // --------------------------------------------
 
-        const notifyCode = `
+        var notifyCode =
 
-if (
-    typeof $notification !== "undefined" &&
-    $notification.post
-) {
+            "if (" +
+            "typeof $notification !== "undefined" " +
+            "&& $notification.post" +
+            ") {\n" +
 
-    $notification.post(
-        title,
-        "最近 3 个",
-        notifyContent
-    );
+            "    $notification.post(" +
+            "title, " +
+            "'最近 3 个', " +
+            "notifyContent" +
+            ");\n" +
 
-} else if (
-    typeof $notify !== "undefined"
-) {
+            "} else if (" +
+            "typeof $notify !== "undefined" +
+            ") {\n" +
 
-    $notify(
-        title,
-        "最近 3 个",
-        notifyContent
-    );
+            "    $notify(" +
+            "title, " +
+            "'最近 3 个', " +
+            "notifyContent" +
+            ");\n" +
 
-} else {
+            "} else {\n" +
 
-    $.msg(
-        title,
-        "最近 3 个",
-        notifyContent
-    );
+            "    $.msg(" +
+            "title, " +
+            "'最近 3 个', " +
+            "notifyContent" +
+            ");\n" +
 
-}
-
-`;
+            "}\n";
 
 
         source =
             source.replace(
                 notifyMarker,
                 notifyCode +
-                "\n" +
                 notifyMarker
             );
 
 
-        // ====================================================
-        // 执行修改后的 DaysMatter.js
-        // ====================================================
+        // ========================================================
+        // 执行修改后的原版 DaysMatter.js
+        // ========================================================
 
         eval(source);
 
 
     } catch (error) {
 
+
         console.log(
             "DaysMatter_Lunar：" +
             (
-                error.message ||
-                error
+                error &&
+                error.message
+                    ? error.message
+                    : error
             )
         );
 
 
         if (
-            typeof $done === "function"
+            typeof $done ===
+                "function"
         ) {
 
             $done();
@@ -641,7 +751,7 @@ if (
 
 
 // ============================================================
-// 10. 启动
+// 启动
 // ============================================================
 
 main();
