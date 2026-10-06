@@ -616,10 +616,10 @@ async function main() {
         // 注入原版 daysData
         // --------------------------------------------
 
-        var injection =
-            daysMarker +
-            "\n" +
-            "(function () {\n" +
+var injection =
+    daysMarker +
+    ";\n" +
+    "(function () {\n" +
             "    var _customDaysData = " +
             JSON.stringify(
                 extraItems
